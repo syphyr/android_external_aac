@@ -2,7 +2,7 @@
 /* -----------------------------------------------------------------------------------------------------------
 Software License for The Fraunhofer FDK AAC Codec Library for Android
 
-© Copyright  1995 - 2013 Fraunhofer-Gesellschaft zur Förderung der angewandten Forschung e.V.
+© Copyright  1995 - 2020 Fraunhofer-Gesellschaft zur Förderung der angewandten Forschung e.V.
   All rights reserved.
 
  1.    INTRODUCTION
@@ -472,9 +472,6 @@ SBR_ERROR sbrDecoder_InitElement (
       self->numSbrChannels -= self->pSbrElement[elementIndex]->nChannels;
     }
 
-    /* Save element ID for sanity checks and to have a fallback for concealment. */
-    self->pSbrElement[elementIndex]->elementID = elementID;
-
     /* Determine amount of channels for this element */
     switch (elementID) {
       case ID_NONE:
@@ -503,6 +500,17 @@ SBR_ERROR sbrDecoder_InitElement (
       }
     }
 
+    /* Sanity check to avoid memory leaks */
+    if (elChannels < self->pSbrElement[elementIndex]->nChannels ||
+        (self->numSbrChannels + elChannels) > (8) + (1)) {
+      self->numSbrChannels += self->pSbrElement[elementIndex]->nChannels;
+      sbrError = SBRDEC_PARSE_ERROR;
+      goto bail;
+    }
+
+    /* Save element ID for sanity checks and to have a fallback for concealment.
+     */
+    self->pSbrElement[elementIndex]->elementID = elementID;
     self->pSbrElement[elementIndex]->nChannels = elChannels;
 
     for (ch=0; ch<elChannels; ch++)
